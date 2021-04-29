@@ -37,15 +37,69 @@ class NoteController extends Controller
         return response()->json(['message' => 'Não foi possível cadastrar a nota!'], 500);
     }
 
+    public function listOne(Request $request, $id)
+    {
+        $note = NoteModel::select('title', 'description', 'created_at', 'updated_at')
+                            ->where('id', $id)
+                            ->first();
+
+        if($note){
+            return response()->json($note, 200);
+        }
+
+        return response()->json(['message' => 'Nota não encontrada!'], 400);
+    }
+
     public function list(Request $request)
     {
+        $user = $request->get('user');
 
-        if(!empty($id)){
-            $note = NoteModel::select('title', 'description', 'created_at', 'updated_at')
-                                    ->where('id', $id)
-                                    ->where('id_user', 1)  
-                                    ->first();
-            echo $note;
+        $note = NoteModel::select('id', 'title', 'description', 'created_at', 'updated_at')
+                            ->where('id_user', $user['id'])
+                            ->orderBy('created_at', 'ASC')
+                            ->get();
+
+        if($note){
+            return response()->json($note, 200);
         }
+
+        return response()->json(['message' => 'Usuário sem notas cadastradas!'], 400);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $note = NoteModel::find($id);
+
+        if($note){
+            $title = $request->input('title');
+            $description = $request->input('description');
+
+            if($title){
+                $note->title = $title;
+            }
+            
+            if($description){
+                $note->description = $description;
+            }
+
+            if($note->save()){
+                return response()->json(null, 200);
+            }
+        }
+
+        return response()->json(['message' => 'Nota não encontrada!']);
+    }
+
+    public function delete(Request $request, $id)
+    {
+        $note = NoteModel::find($id);
+
+        if($note){
+            if($note->delete()){
+                return response()->json(null, 200);
+            }
+        }
+
+        return response()->json(['message' => 'Nota não encontrada!'], 500);
     }
 }
